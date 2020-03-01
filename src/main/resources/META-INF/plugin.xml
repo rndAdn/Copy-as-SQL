@@ -1,0 +1,46 @@
+<idea-plugin>
+    <id>fr.fr.radequin.Copy-as-SQL</id>
+    <name>Copy as Sql</name>
+    <vendor email="adequin.renaud@gmail.com"></vendor>
+
+    <description><![CDATA[
+    Enter short description for your plugin here.<br>
+    <em>most HTML tags may be used</em>
+    ]]></description>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.database</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+
+        <action
+                id="CopyAsInClause.Search.Console"
+                class="fr.radequin.copyassql.CopyAsSqlInClause"
+                text="Copy as SQL IN Clause"
+                description="Squirrel">
+            <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
+        </action>
+        <action
+                id="CopyAsWhereClause.Search.Console"
+                class="fr.radequin.copyassql.CopyAsSqlWhereClause"
+                text="Copy as SQL WHERE Clause"
+                description="Squirrel">
+            <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
+        </action>
+        <action
+                id="CopyAsInsertClause.Search.Console"
+                class="fr.radequin.copyassql.CopyAsSqlInsertClause"
+                text="Copy as SQL INSERT Clause"
+                description="Squirrel">
+            <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
+        </action>
+
+    </actions>
+</idea-plugin>

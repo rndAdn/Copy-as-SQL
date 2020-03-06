@@ -7,7 +7,11 @@ import java.util.function.Function;
 public enum SQLType {
 
     INTEGER("INTEGER", x -> x),
-    VARCHAR("VARCHAR", x -> '\'' + x + '\'');
+    DECIMAL("DECIMAL", x -> x),
+    SMALLINT("SMALLINT", x -> x),
+    VARCHAR("VARCHAR", x -> '\'' + x + '\''),
+    TIMESTAMP("TIMESTAMP", x -> '\'' + x + '\''),
+    CHARACTER("CHARACTER", x -> '\'' + x + '\'');
 
 
     String type;
@@ -21,7 +25,10 @@ public enum SQLType {
 
 
     private static String apply (String value, Function<String, String> fun){
-        return fun.apply(value);
+        return fun.apply(value.replaceAll("'", "''"));
+    }
+    private static String applyDefault (String value, Function<String, String> fun){
+        return fun.apply(value.replaceAll("'", "''"));
     }
 
 
@@ -30,7 +37,7 @@ public enum SQLType {
     }
 
     public static String apply(String value, String columnType){
-        return getByValue(columnType).map(x -> apply(value, x.fun)).orElse("");
+        return getByValue(columnType).map(x -> apply(value, x.fun)).orElse(applyDefault(value, x -> '\'' + x + '\''));
 
     }
 }

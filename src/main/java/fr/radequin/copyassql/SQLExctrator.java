@@ -38,7 +38,7 @@ public class SQLExctrator {
 
         return columns.asList().stream().map(columnIdx -> {
             DataConsumer.Column column = ObjectUtils.notNull(dataModel.getColumn(columnIdx));
-            return "'"+column.name+"'";
+            return column.name;
 
         }).collect(Collectors.toList());
     }

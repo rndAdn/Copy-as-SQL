@@ -3,8 +3,8 @@ plugins {
     id 'org.jetbrains.intellij' version '0.4.16'
 }
 
-group 'fr.fr.radequin'
-version '1.0-SNAPSHOT'
+group 'fr.radequin'
+version '1.0.3'
 
 sourceCompatibility = 1.8
 
@@ -16,15 +16,23 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
+publishPlugin{
+    channels 'beta'
+    token intellijPublishToken
+}
+
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version '2019.1'
+    version '2019.3'
+    updateSinceUntilBuild = false
     type 'IU'
     plugins 'DatabaseTools'
     pluginName 'Copy as SQL'
 }
 patchPluginXml {
-    changeNotes """
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>"""
+    changeNotes
+    """
+      Version 1.0.3 : 
+      Only INTEGER, DECIMAL, SMALLINT, VARCHAR, TIMESTAMP, CHARACTER are currently supported other types are computed as VARCHAR  
+    """
 }

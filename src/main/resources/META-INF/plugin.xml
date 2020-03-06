@@ -1,12 +1,9 @@
 <idea-plugin>
-    <id>fr.fr.radequin.Copy-as-SQL</id>
+    <id>fr.radequin.Copy-as-SQL</id>
     <name>Copy as Sql</name>
-    <vendor email="adequin.renaud@gmail.com"></vendor>
+    <vendor email="adequin.renaud@gmail.com">Adequin Renaud</vendor>
 
-    <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
-    ]]></description>
+    <description>This plugin copy SQL result as IN, WHERE or Insert clauses and put it in the clipboard</description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -16,7 +13,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
     </extensions>
-
+    <idea-version since-build="183"/>
     <actions>
         <!-- Add your actions here -->
 

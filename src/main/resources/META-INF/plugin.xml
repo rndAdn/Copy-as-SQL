@@ -13,7 +13,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
     </extensions>
-    <idea-version since-build="183"/>
     <actions>
         <!-- Add your actions here -->
 

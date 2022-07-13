@@ -24,13 +24,14 @@ publishPlugin {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version = 'LATEST-EAP-SNAPSHOT'
-    updateSinceUntilBuild = false
     type = 'IU'
     plugins = ['DatabaseTools']
     pluginName = 'Copy as SQL'
 }
 
 patchPluginXml {
+    sinceBuild = '222'
+    untilBuild = '*'
     changeNotes
     """
       Version 1.0.3 : 

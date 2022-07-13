@@ -2,22 +2,23 @@ package fr.radequin.copyassql;
 
 import com.intellij.database.datagrid.*;
 import com.intellij.database.extractors.ObjectFormatter;
+import com.intellij.database.extractors.ObjectFormatterMode;
 import com.intellij.database.run.ui.DataAccessType;
-import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class SQLExctrator {
 
 
-    private static List<Cell> extractSQLData(DataGrid grid){
-        SelectionModel<DataConsumer.Row, DataConsumer.Column> model = grid.getSelectionModel();
-        ModelIndexSet<DataConsumer.Column> columns = model.getSelectedColumns();
-        ModelIndexSet<DataConsumer.Row> rows = model.getSelectedRows();
+    private static List<Cell> extractSQLData(DataGrid grid) {
+        SelectionModel<GridRow, GridColumn> model = grid.getSelectionModel();
+        ModelIndexSet<GridColumn> columns = model.getSelectedColumns();
+        ModelIndexSet<GridRow> rows = model.getSelectedRows();
         return getCells(rows, columns, grid);
     }
 
@@ -31,31 +32,31 @@ public class SQLExctrator {
         return extractSQLData(grid).stream().collect(Collectors.groupingBy(Cell::getRow));
     }
 
-    public static List<String> extractSQLColumnName(DataGrid grid){
-        GridModel<DataConsumer.Row, DataConsumer.Column> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
-        SelectionModel<DataConsumer.Row, DataConsumer.Column> model = grid.getSelectionModel();
-        ModelIndexSet<DataConsumer.Column> columns = model.getSelectedColumns();
+    public static List<String> extractSQLColumnName(DataGrid grid) {
+        GridModel<GridRow, GridColumn> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
+        SelectionModel<GridRow, GridColumn> model = grid.getSelectionModel();
+        ModelIndexSet<GridColumn> columns = model.getSelectedColumns();
 
         return columns.asList().stream().map(columnIdx -> {
-            DataConsumer.Column column = ObjectUtils.notNull(dataModel.getColumn(columnIdx));
-            return column.name;
+            GridColumn column = Objects.requireNonNull(dataModel.getColumn(columnIdx));
+            return column.getName();
 
         }).collect(Collectors.toList());
     }
 
-    private static List<Cell> getCells(@NotNull ModelIndexSet<DataConsumer.Row> rowsIdxs, @NotNull ModelIndexSet<DataConsumer.Column> columnsIdxs, @NotNull DataGrid grid) {
+    private static List<Cell> getCells(@NotNull ModelIndexSet<GridRow> rowsIdxs, @NotNull ModelIndexSet<GridColumn> columnsIdxs, @NotNull DataGrid grid) {
 
-        GridModel<DataConsumer.Row, DataConsumer.Column> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
+        GridModel<GridRow, GridColumn> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
         ObjectFormatter formatter = grid.getObjectFormatter();
         List<Cell> result = new ArrayList<>();
 
-        for (ModelIndex<DataConsumer.Column> columnIdx : columnsIdxs.asList()) {
-            DataConsumer.Column column = ObjectUtils.notNull(dataModel.getColumn(columnIdx));
-            for (ModelIndex<DataConsumer.Row> rowIdx : rowsIdxs.asList()) {
-                DataConsumer.Row row = ObjectUtils.notNull(dataModel.getRow(rowIdx));
+        for (ModelIndex<GridColumn> columnIdx : columnsIdxs.asList()) {
+            GridColumn column = Objects.requireNonNull(dataModel.getColumn(columnIdx));
+            for (ModelIndex<GridRow> rowIdx : rowsIdxs.asList()) {
+                GridRow row = Objects.requireNonNull(dataModel.getRow(rowIdx));
                 Object value = dataModel.getValueAt(rowIdx, columnIdx);
-                String stringValue = formatter.getPlainValue(value, column, DataGridUtil.getDbms(grid));
-                result.add(new Cell(stringValue, column.name, column.typeName, row.rowNum));
+                String stringValue = formatter.objectToString(value, column, () -> ObjectFormatterMode.SQL_SCRIPT);
+                result.add(new Cell(stringValue == null ? "NULL" : stringValue, column.getName(), column.getTypeName() == null ? "" : column.getTypeName(), row.getRowNum()));
             }
         }
         return result;

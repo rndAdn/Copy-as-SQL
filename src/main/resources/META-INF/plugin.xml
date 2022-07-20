@@ -25,7 +25,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
     </extensions>
-    <idea-version since-build="222"/>
     <actions>
         <!-- Add your actions here -->
 

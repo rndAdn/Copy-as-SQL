@@ -5,6 +5,18 @@
 
     <description>This plugin copy SQL result as IN, WHERE or Insert clauses and put it in the clipboard</description>
 
+    <change-notes><![CDATA[
+    <ul>
+        <li>1.0.5 - Fix Compatibility with 2022.2</li>
+        <li>1.0.4 - Remove deprecated API usages</li>
+        <li>1.0.3 - Add support for DECIMAL, SMALLINT, TIMESTAMP, CHARACTER. Other types are computed as VARCHAR.</li>
+        <li>1.0.0 - Only INTEGER, VARCHAR are currently supported.</li>
+    </ul>
+
+    ]]>
+
+    </change-notes>
+
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
@@ -13,7 +25,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
     </extensions>
-    <idea-version since-build="183"/>
+    <idea-version since-build="222"/>
     <actions>
         <!-- Add your actions here -->
 

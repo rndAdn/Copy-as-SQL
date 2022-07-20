@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.radequin'
-version '1.0.3'
+version '1.0.5'
 
 sourceCompatibility = 1.8
 
@@ -17,8 +17,8 @@ dependencies {
 }
 
 publishPlugin {
-    channels = ['beta']
-    token = intellijPublishToken
+    channels = ['stable']
+    token.set(System.getenv("ORG_GRADLE_PROJECT_intellijPublishToken"))
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -34,7 +34,6 @@ patchPluginXml {
     untilBuild = '*'
     changeNotes
     """
-      Version 1.0.3 : 
-      Only INTEGER, DECIMAL, SMALLINT, VARCHAR, TIMESTAMP, CHARACTER are currently supported other types are computed as VARCHAR  
+        1.0.5 Fix compatibility with 2022.2 EAP
     """
 }

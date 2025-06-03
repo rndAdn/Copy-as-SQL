@@ -6,7 +6,7 @@ plugins {
 group 'fr.radequin'
 version '1.0.5'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 repositories {
     mavenCentral()
@@ -23,7 +23,7 @@ publishPlugin {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = 'LATEST-EAP-SNAPSHOT'
+    version = '2023.2'
     type = 'IU'
     plugins = ['DatabaseTools']
     pluginName = 'Copy as SQL'
@@ -31,7 +31,6 @@ intellij {
 
 patchPluginXml {
     sinceBuild = '222'
-    untilBuild = '*'
     changeNotes
     """
         1.0.5 Fix compatibility with 2022.2 EAP

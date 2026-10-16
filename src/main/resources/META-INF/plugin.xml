@@ -3,10 +3,13 @@
     <name>Copy as Sql</name>
     <vendor email="adequin.renaud@gmail.com">Adequin Renaud</vendor>
 
-    <description>This plugin copy SQL result as IN, WHERE or Insert clauses and put it in the clipboard</description>
+    <description>This plugin copy SQL result as IN, WHERE, INSERT, UPDATE, or DELETE clauses and put it in the clipboard</description>
 
     <change-notes><![CDATA[
     <ul>
+        <li>1.0.8 - Add notifications on successful copy operations. Improve error handling with user-friendly error messages.</li>
+        <li>1.0.7 - Add support for UPDATE and DELETE clauses.</li>
+        <li>1.0.6 - Add support for FLOAT, DOUBLE, BOOLEAN, DATE, TIME. Make table name configurable for INSERT clause. Add comprehensive documentation.</li>
         <li>1.0.5 - Fix Compatibility with 2022.2</li>
         <li>1.0.4 - Remove deprecated API usages</li>
         <li>1.0.3 - Add support for DECIMAL, SMALLINT, TIMESTAMP, CHARACTER. Other types are computed as VARCHAR.</li>
@@ -24,6 +27,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <notificationGroup id="Copy as SQL" displayType="BALLOON" />
     </extensions>
     <actions>
         <!-- Add your actions here -->
@@ -46,6 +50,20 @@
                 id="CopyAsInsertClause.Search.Console"
                 class="fr.radequin.copyassql.CopyAsSqlInsertClause"
                 text="Copy as SQL INSERT Clause"
+                description="Squirrel">
+            <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
+        </action>
+        <action
+                id="CopyAsUpdateClause.Search.Console"
+                class="fr.radequin.copyassql.CopyAsSqlUpdateClause"
+                text="Copy as SQL UPDATE Clause"
+                description="Squirrel">
+            <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
+        </action>
+        <action
+                id="CopyAsDeleteClause.Search.Console"
+                class="fr.radequin.copyassql.CopyAsSqlDeleteClause"
+                text="Copy as SQL DELETE Clause"
                 description="Squirrel">
             <add-to-group group-id="Console.TableResult.PopupGroup" anchor="last"/>
         </action>

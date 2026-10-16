@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.radequin'
-version '1.0.5'
+version '1.0.8'
 
 sourceCompatibility = 11
 
@@ -13,7 +13,11 @@ repositories {
 }
 
 dependencies {
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.2.0'
 }
 
 publishPlugin {
@@ -23,7 +27,7 @@ publishPlugin {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-    version = '2023.2'
+    version = '2022.2'
     type = 'IU'
     plugins = ['DatabaseTools']
     pluginName = 'Copy as SQL'
@@ -33,6 +37,15 @@ patchPluginXml {
     sinceBuild = '222'
     changeNotes
     """
-        1.0.5 Fix compatibility with 2022.2 EAP
+        1.0.8 Add notifications on successful copy operations. Improve error handling with user-friendly error messages.
+        1.0.7 Add support for UPDATE and DELETE clauses.
+        1.0.6 Add support for FLOAT, DOUBLE, BOOLEAN, DATE, TIME. Make table name configurable for INSERT clause. Add comprehensive documentation.
     """
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

@@ -21,7 +21,7 @@ dependencies {
 }
 
 publishPlugin {
-    channels = ['stable']
+    channels = ['default']
     token.set(System.getenv("ORG_GRADLE_PROJECT_intellijPublishToken"))
 }
 

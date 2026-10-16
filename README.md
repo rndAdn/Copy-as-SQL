@@ -69,22 +69,24 @@ The plugin includes comprehensive error handling to provide user-friendly error 
 
 ## Development
 
-Use **JDK 11** for Gradle and the platform-backed tests. The project builds against IDEA Ultimate 2022.2 to keep the oldest supported API and Java bytecode baseline. In IntelliJ, set **Settings → Build Tools → Gradle → Gradle JVM** to JDK 11; do not use the current IDE's bundled Java 25 to run this Gradle 7.4.2 wrapper.
+Use **JDK 11** for Gradle and the platform-backed tests. The project builds against IDEA Ultimate 2022.2 to keep the oldest supported API and Java bytecode baseline; the plugin's compatibility range remains **222–262.\***. In IntelliJ, set **Settings → Build Tools → Gradle → Gradle JVM** to JDK 11; do not use the current IDE's bundled Java 25 to run this Gradle 7.6.6 wrapper.
 
 ```bash
 # macOS, after installing a JDK 11
 export JAVA_HOME="$(/usr/libexec/java_home -v 11)"
 
-./gradlew runIde             # Separate IDEA Ultimate 2022.2 development sandbox
+./gradlew runIde             # Separate IDEA 2026.2.3 development sandbox
 ./gradlew test               # SQL output, NULL, escaping, empty selection, cancellation
 ./gradlew buildPlugin        # build/distributions/Copy as SQL-1.0.8.zip
 ./gradlew runPluginVerifier  # Binary compatibility against the configured IDE matrix
 ```
 
+`runIde` downloads IDEA 2026.2.3 and its matching JetBrains Runtime (JBR 25) on first use. Gradle, compilation, tests, and searchable-options generation stay on the 2022.2 baseline. The 2026 sandbox keeps its configuration and caches in `build/idea-sandbox-2026/`, separate from the baseline sandbox and your installed IDE. Internally, `runIde` delegates to `runCurrentIde`, a plain `JavaExec` built from the IDE's `product-info.json`: the Gradle IntelliJ 1.x launcher cannot parse 2026 JVM arguments and also ties tests to the original `runIde` SDK. `--args` and `--debug-jvm` on `runIde` are forwarded. The launcher selects the macOS, Windows, or Linux entry for the host architecture; only macOS aarch64 has been exercised.
+
 The verifier targets IDEA Ultimate 2022.2, IDEA 2026.2.3, and DataGrip 2026.2.6. Its first run downloads IDE distributions and dependencies and can use several GB. Reports are written to `build/reports/pluginVerifier/`; test reports are in `build/reports/tests/test/`.
 All three targets passed Plugin Verifier 1.410. On 2022.2, the missing **optional** Grid Core dependency is expected: those classes still belong to Database Tools in that version.
 
-To try the plugin in a current IDE, use **Plugins → Install Plugin from Disk…** and select the generated ZIP. `runIde` deliberately stays on the baseline IDE. Verify the five menu actions on selected query results, including apostrophes, SQL NULL, and cancellation of both UPDATE dialogs.
+To try a packaged build in another IDE, use **Plugins → Install Plugin from Disk…** and select the generated ZIP. In the development sandbox, verify the five menu actions on selected query results, including apostrophes, SQL NULL, and cancellation of both UPDATE dialogs.
 
 ## Publishing
 

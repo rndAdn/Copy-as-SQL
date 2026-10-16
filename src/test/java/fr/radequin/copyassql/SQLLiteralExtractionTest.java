@@ -1,6 +1,7 @@
 package fr.radequin.copyassql;
 
 import com.intellij.database.Dbms;
+import com.intellij.database.datagrid.DataConsumer;
 import com.intellij.database.datagrid.DataGrid;
 import com.intellij.database.datagrid.DataGridUtil;
 import com.intellij.database.datagrid.GridColumn;
@@ -44,6 +45,29 @@ class SQLLiteralExtractionTest {
         fixture.tearDown();
     }
 
+    static Stream<Arguments> stringLiterals() {
+        return Stream.of(
+                Arguments.of(Dbms.POSTGRES, Types.VARCHAR, "VARCHAR", "O'Reilly", "'O''Reilly'"),
+                Arguments.of(Dbms.POSTGRES, Types.VARCHAR, "VARCHAR", "a\\b", "'a\\b'"),
+                Arguments.of(Dbms.MYSQL, Types.VARCHAR, "VARCHAR", "a'\\b", "'a''\\\\b'"),
+                Arguments.of(Dbms.MARIA, Types.VARCHAR, "VARCHAR", "a\\b", "'a\\\\b'"),
+                Arguments.of(Dbms.CLICKHOUSE, Types.VARCHAR, "String", "a\\b", "'a\\\\b'"),
+                Arguments.of(Dbms.MSSQL, Types.NVARCHAR, "NVARCHAR", "é'", "N'é'''"),
+                Arguments.of(Dbms.MYSQL, Types.BIT, "BIT", "101", "b'101'"),
+                Arguments.of(Dbms.POSTGRES, Types.VARCHAR, "VARCHAR", "", "''")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("stringLiterals")
+    void quotesSqlTextWithoutChangingItsValue(Dbms dbms, int type, String typeName, String value, String expected) {
+        DataConsumer.Column column = mock(DataConsumer.Column.class);
+        when(column.getType()).thenReturn(type);
+        when(column.getTypeName()).thenReturn(typeName);
+        when(column.getSize()).thenReturn(3);
+
+        assertEquals(expected, SQLExtractor.stringLiteral(dbms, column, value));
+    }
     static Stream<Arguments> sqlValues() {
         return Stream.of(
                 Arguments.of("O'Reilly", Types.VARCHAR, "'O''Reilly'"),

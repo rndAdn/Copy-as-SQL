@@ -7,7 +7,7 @@
 
     <change-notes><![CDATA[
     <ul>
-        <li>1.0.8 - Add notifications on successful copy operations. Improve error handling with user-friendly error messages.</li>
+        <li>1.0.8 - Support IntelliJ IDEA and DataGrip through 2026.2. Match all selected old values in UPDATE and prompt for the new SQL value of the last column. Fix NULL predicates and cancelled dialogs. Add copy notifications and user-friendly errors.</li>
         <li>1.0.7 - Add support for UPDATE and DELETE clauses.</li>
         <li>1.0.6 - Add support for FLOAT, DOUBLE, BOOLEAN, DATE, TIME. Make table name configurable for INSERT clause. Add comprehensive documentation.</li>
         <li>1.0.5 - Fix Compatibility with 2022.2</li>
@@ -24,6 +24,7 @@
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.database</depends>
+    <depends optional="true" config-file="copy-as-sql-grid.xml">intellij.grid.core.plugin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

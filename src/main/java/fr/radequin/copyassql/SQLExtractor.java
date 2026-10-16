@@ -4,7 +4,9 @@ import com.intellij.database.datagrid.*;
 import com.intellij.database.Dbms;
 import com.intellij.database.extractors.ObjectFormatter;
 import com.intellij.database.extractors.ObjectFormatterMode;
-import com.intellij.database.extractors.SqlInsertValuesExtractor;
+import com.intellij.database.extractors.DbObjectFormatterUtil;
+import com.intellij.database.extractors.DatabaseObjectFormatterConfig;
+import com.intellij.database.extractors.ObjectFormatterConfig;
 import com.intellij.database.run.ui.DataAccessType;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,7 +55,8 @@ public class SQLExtractor {
 
         GridModel<GridRow, GridColumn> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
         ObjectFormatter formatter = grid.getObjectFormatter();
-        SqlInsertValuesExtractor extractor = new SqlInsertValuesExtractor(formatter, null);
+        // The platform implementation also implements methods added by newer IDEs.
+        ObjectFormatterConfig config = DatabaseObjectFormatterConfig.get(ObjectFormatterMode.SQL_SCRIPT);
         Dbms dbms = DataGridUtil.getDbms(grid);
         List<Cell> result = new ArrayList<>();
 
@@ -62,15 +65,28 @@ public class SQLExtractor {
             for (ModelIndex<GridRow> rowIdx : rowsIdxs.asList()) {
                 GridRow row = Objects.requireNonNull(dataModel.getRow(rowIdx));
                 Object value = dataModel.getValueAt(rowIdx, columnIdx);
-                // SQL_SCRIPT leaves strings unquoted; the native extractor supplies dialect-specific literals.
-                String stringValue = formatter.objectToString(value, column, () -> ObjectFormatterMode.SQL_SCRIPT);
+                String stringValue = formatter.objectToString(value, column, config);
                 String sqlValue = stringValue == null ? "NULL"
                         : formatter.isStringLiteral(column, value, ObjectFormatterMode.SQL_SCRIPT)
-                        ? extractor.getStringValueLiteral(dbms, column, stringValue) : stringValue;
+                        ? stringLiteral(dbms, column, stringValue) : stringValue;
                 result.add(new Cell(sqlValue, column.getName(), row.getRowNum()));
             }
         }
         return result;
+    }
+
+    // Native extractor signatures differ across IDE versions; use only the shared formatter API.
+    // shortcut: MySQL assumes default backslash escaping; use session-aware literals before supporting custom SQL modes.
+    static String stringLiteral(Dbms dbms, GridColumn column, String value) {
+        String escaped = value.replace("'", "''");
+        if (dbms.isMysql() || dbms.isClickHouse()) {
+            escaped = escaped.replace("\\", "\\\\");
+        }
+        String literal = "'" + escaped + "'";
+        if (dbms.isMicrosoft()) {
+            return "N" + literal;
+        }
+        return dbms.isMysql() && DbObjectFormatterUtil.isBitString(column) ? "b" + literal : literal;
     }
 
 

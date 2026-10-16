@@ -1,8 +1,10 @@
 package fr.radequin.copyassql;
 
 import com.intellij.database.datagrid.*;
+import com.intellij.database.Dbms;
 import com.intellij.database.extractors.ObjectFormatter;
 import com.intellij.database.extractors.ObjectFormatterMode;
+import com.intellij.database.extractors.SqlInsertValuesExtractor;
 import com.intellij.database.run.ui.DataAccessType;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,13 +14,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class SQLExctrator {
+public class SQLExtractor {
 
 
     private static List<Cell> extractSQLData(DataGrid grid) {
         SelectionModel<GridRow, GridColumn> model = grid.getSelectionModel();
         ModelIndexSet<GridColumn> columns = model.getSelectedColumns();
         ModelIndexSet<GridRow> rows = model.getSelectedRows();
+        if (columns.asList().isEmpty() || rows.asList().isEmpty()) {
+            throw new IllegalArgumentException("No cells selected.");
+        }
         return getCells(rows, columns, grid);
     }
 
@@ -48,6 +53,8 @@ public class SQLExctrator {
 
         GridModel<GridRow, GridColumn> dataModel = grid.getDataModel(DataAccessType.DATA_WITH_MUTATIONS);
         ObjectFormatter formatter = grid.getObjectFormatter();
+        SqlInsertValuesExtractor extractor = new SqlInsertValuesExtractor(formatter, null);
+        Dbms dbms = DataGridUtil.getDbms(grid);
         List<Cell> result = new ArrayList<>();
 
         for (ModelIndex<GridColumn> columnIdx : columnsIdxs.asList()) {
@@ -55,8 +62,12 @@ public class SQLExctrator {
             for (ModelIndex<GridRow> rowIdx : rowsIdxs.asList()) {
                 GridRow row = Objects.requireNonNull(dataModel.getRow(rowIdx));
                 Object value = dataModel.getValueAt(rowIdx, columnIdx);
+                // SQL_SCRIPT leaves strings unquoted; the native extractor supplies dialect-specific literals.
                 String stringValue = formatter.objectToString(value, column, () -> ObjectFormatterMode.SQL_SCRIPT);
-                result.add(new Cell(stringValue == null ? "NULL" : stringValue, column.getName(), column.getTypeName() == null ? "" : column.getTypeName(), row.getRowNum()));
+                String sqlValue = stringValue == null ? "NULL"
+                        : formatter.isStringLiteral(column, value, ObjectFormatterMode.SQL_SCRIPT)
+                        ? extractor.getStringValueLiteral(dbms, column, stringValue) : stringValue;
+                result.add(new Cell(sqlValue, column.getName(), row.getRowNum()));
             }
         }
         return result;
@@ -68,13 +79,11 @@ public class SQLExctrator {
         private final int row;
         private final String value;
         private final String title;
-        private final String type;
 
-        Cell(@NotNull String value, @NotNull String title, @NotNull String type, int row) {
+        Cell(@NotNull String value, @NotNull String title, int row) {
             super();
             this.value = value;
             this.title = title;
-            this.type = type;
             this.row = row;
         }
 
@@ -82,13 +91,14 @@ public class SQLExctrator {
             return value;
         }
 
+        public String getCondition() {
+            return title + ("NULL".equals(value) ? " IS NULL" : " = " + value);
+        }
+
         public String getTitle() {
             return title;
         }
 
-        public String getType() {
-            return type;
-        }
 
         public int getRow() {
             return row;
@@ -100,7 +110,6 @@ public class SQLExctrator {
             return "Cell{" +
                     "value='" + value + '\'' +
                     ", title='" + title + '\'' +
-                    ", type='" + type + '\'' +
                     '}';
         }
     }

@@ -35,12 +35,11 @@ intellij {
 
 patchPluginXml {
     sinceBuild = '222'
-    changeNotes
-    """
-        1.0.8 Add notifications on successful copy operations. Improve error handling with user-friendly error messages.
-        1.0.7 Add support for UPDATE and DELETE clauses.
-        1.0.6 Add support for FLOAT, DOUBLE, BOOLEAN, DATE, TIME. Make table name configurable for INSERT clause. Add comprehensive documentation.
-    """
+    untilBuild = '262.*'
+}
+
+runPluginVerifier {
+    ideVersions = ['IU-2022.2', 'IU-2026.2.3', 'DG-2026.2.6']
 }
 
 test {

@@ -1,6 +1,11 @@
+import groovy.json.JsonSlurper
+import org.jetbrains.intellij.jbr.JbrResolver
+import org.jetbrains.intellij.utils.ArchiveUtils
+import org.jetbrains.intellij.utils.DependenciesDownloader
+
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.7.0'
+    id 'org.jetbrains.intellij' version '1.17.4'
 }
 
 group 'fr.radequin'
@@ -8,13 +13,25 @@ version '1.0.8'
 
 sourceCompatibility = 11
 
+def runIdeVersion = '2026.2.3'
+
+configurations {
+    runIdePlatform
+}
+
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/releases'
+        content { includeModule('com.jetbrains.intellij.idea', 'ideaIU') }
+    }
 }
 
 dependencies {
+    runIdePlatform "com.jetbrains.intellij.idea:ideaIU:${runIdeVersion}@zip"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.9.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
     testImplementation 'org.mockito:mockito-core:5.2.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.2.0'
@@ -33,13 +50,81 @@ intellij {
     pluginName = 'Copy as SQL'
 }
 
+def prepareRunIdePlatform = tasks.register('prepareRunIdePlatform', Sync) {
+    from { zipTree(configurations.runIdePlatform.singleFile) }
+    into layout.buildDirectory.dir("run-ide-platform/${runIdeVersion}")
+    // The Maven zip drops exec bits; the IDE needs fsnotifier to be executable.
+    inputs.property('nativeToolsMode', '0755')
+    filesMatching('bin/*/*/*') { it.mode = 0755 }
+}
+
+// The legacy launcher cannot parse current -Xbootclasspath/a: JVM arguments.
+def runCurrentIde = tasks.register('runCurrentIde', JavaExec) {
+    dependsOn prepareRunIdePlatform, prepareSandbox
+    mainClass = 'com.intellij.idea.Main'
+    argumentProviders.add({ tasks.runIde.args } as org.gradle.process.CommandLineArgumentProvider)
+    debugOptions.enabled = providers.provider { tasks.runIde.debug }
+    doFirst {
+        def ideHome = prepareRunIdePlatform.get().destinationDir
+        def product = new JsonSlurper().parse(new File(ideHome, 'product-info.json'))
+        assert product.version == runIdeVersion: "Expected IDEA ${runIdeVersion}, found ${product.version}"
+        def os = System.getProperty('os.name')
+        def platform = os.startsWith('Mac') ? 'macOS' : os.startsWith('Windows') ? 'Windows' : os
+        def hostArch = System.getProperty('os.arch')
+        def arch = ['arm64': 'aarch64', 'x86_64': 'amd64'][hostArch] ?: hostArch
+        def launch = product.launch.find { it.os == platform && it.arch == arch }
+        if (launch == null) {
+            throw new GradleException("IDEA ${runIdeVersion} has no launcher for ${os}/${arch}")
+        }
+
+        def runtimeProperties = new Properties()
+        new File(ideHome, 'dependencies.txt').withInputStream { runtimeProperties.load(it) }
+        def resolver = objects.newInstance(JbrResolver, intellij.jreRepository,
+                objects.newInstance(ArchiveUtils),
+                objects.newInstance(DependenciesDownloader, gradle.startParameter.offline),
+                java.toolchain, javaToolchains, project.path)
+        def runtime = resolver.resolve(runtimeProperties.runtimeBuild, 'jcef', null)
+        if (runtime == null) {
+            throw new GradleException("Cannot resolve IDEA's JetBrains Runtime ${runtimeProperties.runtimeBuild}")
+        }
+
+        executable = runtime.javaExecutable
+        workingDir = new File(ideHome, 'bin')
+        classpath = files(launch.bootClassPathJarNames.collect { new File(ideHome, "lib/${it}") })
+        jvmArgs new File(ideHome, launch.vmOptionsFilePath).readLines().findAll { it && !it.startsWith('#') }
+        jvmArgs launch.additionalJvmArguments.collect {
+            it.replace('$APP_PACKAGE', ideHome.absolutePath)
+                    .replace('$IDE_HOME', ideHome.absolutePath)
+                    .replace('%IDE_HOME%', ideHome.absolutePath)
+        }
+        systemProperties += [
+                'idea.home.path': ideHome.absolutePath,
+                'idea.config.path': layout.buildDirectory.dir('idea-sandbox-2026/config').get().asFile.absolutePath,
+                'idea.system.path': layout.buildDirectory.dir('idea-sandbox-2026/system').get().asFile.absolutePath,
+                'idea.log.path': layout.buildDirectory.dir('idea-sandbox-2026/system/log').get().asFile.absolutePath,
+                'idea.plugins.path': tasks.prepareSandbox.destinationDir.absolutePath,
+                'idea.required.plugins.id': tasks.runIde.requiredPluginIds.get().join(','),
+                'idea.plugin.in.sandbox.mode': 'true',
+                'idea.is.internal': 'true',
+                'idea.auto.reload.plugins': 'true',
+                'idea.classpath.index.enabled': 'false',
+        ]
+    }
+}
+
+// The 1.x plugin also uses runIde's SDK to configure tests; keep that SDK on 2022.2.
+runIde {
+    dependsOn runCurrentIde
+    onlyIf { false }
+}
+
 patchPluginXml {
     sinceBuild = '222'
     untilBuild = '262.*'
 }
 
 runPluginVerifier {
-    ideVersions = ['IU-2022.2', 'IU-2026.2.3', 'DG-2026.2.6']
+    ideVersions = ['IU-2022.2', "IU-${runIdeVersion}", 'DG-2026.2.6']
 }
 
 test {

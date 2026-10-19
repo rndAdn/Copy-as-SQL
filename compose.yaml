@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: copy_as_sql
+      POSTGRES_USER: copy_as_sql
+      POSTGRES_PASSWORD: copy_as_sql
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-fixtures.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U copy_as_sql -d copy_as_sql"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s

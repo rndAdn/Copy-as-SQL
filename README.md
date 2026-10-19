@@ -88,6 +88,68 @@ All three targets passed Plugin Verifier 1.410. On 2022.2, the missing **optiona
 
 To try a packaged build in another IDE, use **Plugins → Install Plugin from Disk…** and select the generated ZIP. In the development sandbox, verify the five menu actions on selected query results, including apostrophes, SQL NULL, and cancellation of both UPDATE dialogs.
 
+### Disposable PostgreSQL playground
+
+Requires Docker with Docker Compose. From the repository root:
+
+```bash
+docker compose up -d --wait
+```
+
+Connect from DataGrip or IntelliJ's **Database** tool window using a **PostgreSQL** data source:
+
+| Setting | Value |
+| --- | --- |
+| Host | `127.0.0.1` |
+| Port | `55432` |
+| Database | `copy_as_sql` |
+| User | `copy_as_sql` |
+| Password | `copy_as_sql` |
+| JDBC URL | `jdbc:postgresql://127.0.0.1:55432/copy_as_sql` |
+| Schema to introspect | `playground` |
+
+The credentials are public test credentials, not production secrets. The port is bound to IPv4 loopback only. If `55432` is already in use, change the host port in `compose.yaml` and the connection settings.
+
+`docker/postgres/init.sql` creates these fixtures without extensions:
+
+| Table | Cases |
+| --- | --- |
+| `playground.scalar_types` | Integers and limits, exact decimals, floating point including Infinity/NaN, money, booleans, char/varchar/text, UUID, binary, JSON/JSONB |
+| `playground.temporal_types` | Date, time, time with offset, timestamps with/without time zone, microseconds, intervals, infinity |
+| `playground.postgres_types` | Enum, arrays including NULL elements and empty arrays, matrix, IPv4/IPv6, CIDR, MAC, bits, ranges/multirange, geometry, XML, full-text search |
+| `playground."Odd Table"` | Quoted identifiers: `"Id"`, `"select"`, `"with space"`, `"a""quote"` |
+| `playground.insert_target` | Empty copy of `scalar_types` for trying generated INSERT statements |
+
+Rows distinguish SQL `NULL`, the text `'NULL'`, empty strings, JSON `null`, apostrophes, double quotes, backslashes, newlines, tabs and Unicode. These are test inputs, not a guarantee that every plugin action supports every PostgreSQL type: some types lack an equality operator, and SQL may require casts or quoted identifiers.
+
+Open a query console and run:
+
+```sql
+SELECT * FROM playground.scalar_types ORDER BY id;
+SELECT * FROM playground.temporal_types ORDER BY id;
+SELECT * FROM playground.postgres_types ORDER BY id;
+SELECT * FROM playground."Odd Table" ORDER BY "Id";
+```
+
+Select cells in the result grid, then try the plugin's context-menu actions. Start with `id`, `text_value`, `boolean_value`, `numeric_value`; include rows 2–5 to check escaping and NULL handling.
+
+For INSERT, select all columns of `scalar_types` and enter `playground.insert_target` as the destination. Run the generated SQL inside `BEGIN; … ROLLBACK;` to keep the destination empty. For UPDATE/DELETE, use the same transaction wrapper and include `id` in the selection.
+
+The database stores its data in **tmpfs**, not a persistent Docker volume. Stopping/restarting/recreating the container discards all edits; initialization runs again on the next start. To reset explicitly, including after changing the fixture SQL:
+
+```bash
+docker compose down
+docker compose up -d --wait
+```
+
+To inspect or remove it:
+
+```bash
+docker compose logs postgres
+docker compose exec postgres psql -U copy_as_sql -d copy_as_sql
+docker compose down
+```
+
 ## Publishing
 
 1. Run `./gradlew test buildPlugin runPluginVerifier`, then manually check the ZIP in the target IDE.
